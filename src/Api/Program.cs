@@ -15,6 +15,18 @@ using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- 1. CONFIGURACIÓN DE CORS ---
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000") // URL de tu React/Next.js
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
@@ -48,8 +60,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+// --- 2. HABILITAR CORS (Debe ir antes de Authentication/Authorization) ---
+app.UseCors("FrontendPolicy");
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+// --- 3. ENDPOINTS ---
 
 app.MapPost("/api/auth/register", async (RegisterUserCommand cmd, ISender sender) =>
 {
@@ -78,7 +95,8 @@ app.MapGet("/api/viajes/{id}", async (Guid id, ISender sender) =>
 
 app.MapPost("/api/pasajes", async (ComprarPasajesRequest request, ClaimsPrincipal user, ISender sender) =>
 {
-    var subject = user.FindFirstValue("sub") ?? user.FindFirstValue(ClaimTypes.NameIdentifier);
+    // Cambiamos el identificador para asegurar compatibilidad con el token generado
+    var subject = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
     if (!Guid.TryParse(subject, out var userId))
         return Results.Unauthorized();
 
@@ -87,13 +105,17 @@ app.MapPost("/api/pasajes", async (ComprarPasajesRequest request, ClaimsPrincipa
     return Results.Ok(result);
 }).RequireAuthorization();
 
-app.MapGet("/api/pasajes/mis", async (int page, int pageSize, ClaimsPrincipal user, ISender sender) =>
+app.MapGet("/api/pasajes/mis", async (int? page, int? pageSize, ClaimsPrincipal user, ISender sender) =>
 {
-    var subject = user.FindFirstValue("sub");
+    var subject = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
     if (!Guid.TryParse(subject, out var userId))
         return Results.Unauthorized();
-
-    var query = new GetPasajesByUsuarioQuery(userId, page == 0 ? 1 : page, pageSize == 0 ? 5 : pageSize);
+    var query = new GetPasajesByUsuarioQuery(
+        userId, 
+        page ?? 1, 
+        pageSize ?? 10
+    );
+    
     var result = await sender.Send(query);
     return Results.Ok(result);
 }).RequireAuthorization();
@@ -103,14 +125,6 @@ app.MapPost("/api/pasajes/validar", async (ValidarPasajeRequest request, ISender
     var result = await sender.Send(new ValidarPasajeQuery(request.QrContent));
     return Results.Ok(result);
 });
-
-app.MapGet("/health", () => Results.Ok("ok"));
-
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();
-}
 
 app.Run();
 

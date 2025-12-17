@@ -2,7 +2,8 @@
 
 ## Estructura
 - `Domain`: Entidades (`Usuario`, `Viaje`, `Pasaje`), enum `UserRole`.
-- `Application`: CQRS con MediatR y FluentValidation. Casos:
+- `Application`: CQRS con MediatR y FluentValidation. 
+  Casos:
   - Auth: register/login → JWT.
   - Viajes: listar y detalle.
   - Pasajes: comprar, listar propios (paginado 5), validar QR.

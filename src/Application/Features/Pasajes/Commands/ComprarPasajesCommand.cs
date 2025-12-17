@@ -50,7 +50,9 @@ public class ComprarPasajesCommandHandler : IRequestHandler<ComprarPasajesComman
                 Costo = viaje.CostoBase,
                 CreatedAt = DateTime.UtcNow
             };
-            pasaje.QRData = _qrGenerator.GenerateQrBase64(pasaje.Id.ToString());
+
+            string validationUrl = $"https://localhost:5260/validate/{pasaje.Id}";
+            pasaje.QRData = _qrGenerator.GenerateQrBase64(validationUrl);
             pasajes.Add(pasaje);
         }
 
