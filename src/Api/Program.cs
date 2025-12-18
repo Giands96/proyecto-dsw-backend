@@ -87,6 +87,13 @@ app.MapGet("/api/viajes", async (string? destino, DateTimeOffset? desde, DateTim
     return Results.Ok(result);
 });
 
+app.MapGet("/api/viajes/destinos", async (string? destino, DateTimeOffset? desde, DateTimeOffset? hasta, int page, int pageSize, ISender sender) =>
+{
+    var query = new GetViajesQuery(destino, desde, hasta, page == 0 ? 1 : page, pageSize == 0 ? 20 : pageSize);
+    var result = await sender.Send(query);
+    return Results.Ok(result);
+});
+
 app.MapGet("/api/viajes/{id}", async (Guid id, ISender sender) =>
 {
     var result = await sender.Send(new GetViajeByIdQuery(id));

@@ -5,7 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Application.Features.Viajes.Queries;
 
-public record GetViajesQuery(string? Destino, DateTimeOffset? Desde, DateTimeOffset? Hasta, int Page = 1, int PageSize = 20) : IRequest<IReadOnlyList<ViajeDto>>;
+public record GetViajesQuery(
+    string? Destino,
+     DateTimeOffset? Desde,
+      DateTimeOffset? Hasta,
+       int Page = 1,
+        int PageSize = 20
+        ) : IRequest<IReadOnlyList<ViajeDto>>;
 
 public class GetViajesQueryHandler : IRequestHandler<GetViajesQuery, IReadOnlyList<ViajeDto>>
 {
