@@ -15,12 +15,11 @@ using MediatR;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- 1. CONFIGURACIÓN DE CORS ---
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // URL de tu React/Next.js
+        policy.WithOrigins("http://localhost:3000")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -60,13 +59,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// --- 2. HABILITAR CORS (Debe ir antes de Authentication/Authorization) ---
 app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-// --- 3. ENDPOINTS ---
 
 app.MapPost("/api/auth/register", async (RegisterUserCommand cmd, ISender sender) =>
 {

@@ -2,7 +2,6 @@ using Application.Common.Interfaces;
 using Infrastructure.Persistence;
 using Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
-using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +15,7 @@ public static class DependencyInjection
             ?? "Server=localhost;Port=3306;Database=bus_tickets;User=root;Password=root123;TreatTinyAsBoolean=true;";
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+            options.UseNpgsql(configuration.GetConnectionString("Default")));
 
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());

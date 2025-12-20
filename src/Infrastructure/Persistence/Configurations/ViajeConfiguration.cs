@@ -10,11 +10,10 @@ public class ViajeConfiguration : IEntityTypeConfiguration<Viaje>
     {
         builder.ToTable("Viajes");
         builder.HasKey(x => x.Id);
-        builder.Property(x => x.Id).HasColumnType("char(36)");
         builder.Property(x => x.Destino).IsRequired().HasMaxLength(120);
-        builder.Property(x => x.FechaHora).HasColumnType("datetime(6)");
+        builder.Property(x => x.FechaHora).HasColumnType("timestamp with time zone");
         builder.Property(x => x.CostoBase).HasPrecision(10, 2);
         builder.Property(x => x.CapacidadMax).HasDefaultValue(50);
-        builder.Property(x => x.CreatedAt).HasColumnType("datetime(6)");
+        builder.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone");
     }
 }
