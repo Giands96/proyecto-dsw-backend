@@ -1,3 +1,9 @@
 namespace Application.Dtos;
 
-public record PasajeCardDto(Guid Id, string NombrePasajero, decimal Costo, string QRData);
+public record PasajeCardDto(
+    Guid Id,
+    string NombrePasajero,
+    decimal Costo,
+    string QRData,
+    string Destino
+);

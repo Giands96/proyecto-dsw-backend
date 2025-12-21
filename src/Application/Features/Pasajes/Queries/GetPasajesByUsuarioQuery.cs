@@ -20,17 +20,28 @@ public class GetPasajesByUsuarioQueryHandler : IRequestHandler<GetPasajesByUsuar
 
     public async Task<PagedPasajesResponse> Handle(GetPasajesByUsuarioQuery request, CancellationToken cancellationToken)
     {
-        var baseQuery = _context.Pasajes.Where(p => p.UsuarioCompradorId == request.UsuarioId);
+        var baseQuery = _context.Pasajes.Include(p => p.Viaje)
+            .Where(p => p.UsuarioCompradorId == request.UsuarioId);
         var total = await baseQuery.CountAsync(cancellationToken);
         var skip = (request.Page - 1) * request.PageSize;
 
         var pasajes = await baseQuery
+            .Include(p => p.Viaje)
             .OrderByDescending(p => p.CreatedAt)
             .Skip(skip)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
 
-        var items = pasajes.Select(p => new PasajeCardDto(p.Id, p.NombrePasajero, p.Costo, p.QRData)).ToList();
+        var items = pasajes
+            .Select(p => new PasajeCardDto(
+                p.Id,
+                p.NombrePasajero,
+                p.Costo,
+                p.QRData,
+                p.Viaje!.Destino
+            ))
+            .ToList();
+
         return new PagedPasajesResponse(items, total, request.Page, request.PageSize);
     }
 }

@@ -68,7 +68,7 @@ public class ComprarPasajesCommandHandler : IRequestHandler<ComprarPasajesComman
             await _context.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
             return pasajes
-                .Select(p => new PasajeCardDto(p.Id, p.NombrePasajero, p.Costo, p.QRData))
+                .Select(p => new PasajeCardDto(p.Id, p.NombrePasajero, p.Costo, p.QRData, viaje.Destino))
                 .ToList();
         }
         catch (Exception)
