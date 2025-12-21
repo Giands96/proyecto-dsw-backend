@@ -12,6 +12,9 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
 using MediatR;
+using Microsoft.OpenApi.Models;
+using Application.Features.Viajes.Commands;
+using Application.Features.Usuarios.Queries;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,7 +33,38 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "BusTickets API", Version = "v1" });
+
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = @"Ingresar 'Bearer' y luego el token.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
+});
+    
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -45,13 +79,37 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthorization();
 
 builder.Host.UseSerilog((ctx, lc) => lc
     .ReadFrom.Configuration(ctx.Configuration)
     .WriteTo.Console());
 
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policy => 
+        policy.RequireRole("Admin"));
+});
+
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    { 
+        var context = services.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
+        var hasher = services.GetRequiredService<Application.Common.Interfaces.IPasswordHasher>();
+        await Infrastructure.Persistence.DbInitializer.InitializeAsync(context, hasher);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Ocurrió un error al crear el Admin por defecto.");
+    }
+}
+
+app.UseMiddleware<Api.Middlewares.GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
@@ -98,7 +156,6 @@ app.MapGet("/api/viajes/{id}", async (Guid id, ISender sender) =>
 
 app.MapPost("/api/pasajes", async (ComprarPasajesRequest request, ClaimsPrincipal user, ISender sender) =>
 {
-    // Cambiamos el identificador para asegurar compatibilidad con el token generado
     var subject = user.FindFirstValue(ClaimTypes.NameIdentifier) ?? user.FindFirstValue("sub");
     if (!Guid.TryParse(subject, out var userId))
         return Results.Unauthorized();
@@ -127,6 +184,58 @@ app.MapPost("/api/pasajes/validar", async (ValidarPasajeRequest request, ISender
 {
     var result = await sender.Send(new ValidarPasajeQuery(request.QrContent));
     return Results.Ok(result);
+});
+
+// Admin Group
+
+var adminGroup = app.MapGroup("/api/admin").RequireAuthorization("AdminPolicy"); 
+
+// --- VIAJES ---
+adminGroup.MapPost("/viajes", async (CreateViajeCommand command, ISender sender) =>
+{
+    var id = await sender.Send(command);
+    return Results.Created($"/api/viajes/{id}", id);
+});
+
+adminGroup.MapPut("/viajes/{id}", async (Guid id, UpdateViajeCommand command, ISender sender) =>
+{
+    if (id != command.Id) return Results.BadRequest();
+    var success = await sender.Send(command);
+    return success ? Results.NoContent() : Results.NotFound();
+});
+
+adminGroup.MapDelete("/viajes/{id}", async (Guid id, ISender sender) =>
+{
+    var success = await sender.Send(new DeleteViajeCommand(id));
+    return success ? Results.NoContent() : Results.NotFound();
+});
+
+// --- USUARIOS ---
+adminGroup.MapGet("/usuarios", async (int? page, int? pageSize, ISender sender) =>
+{
+    var query = new GetUsuariosQuery(page ?? 1, pageSize ?? 10);
+    var result = await sender.Send(query);
+    return Results.Ok(result);
+});
+
+// -- PASAJES ---
+adminGroup.MapGet("/viajes/{viajeId}/pasajes", async (Guid viajeId, ISender sender) =>
+{
+    var result = await sender.Send(new GetPasajesByViajeIdQuery(viajeId));
+    return Results.Ok(result);
+});
+
+adminGroup.MapPut("/pasajes/{id}", async (Guid id, UpdatePasajeCommand command, ISender sender) =>
+{
+    if (id != command.Id) return Results.BadRequest();
+    var success = await sender.Send(command);
+    return success ? Results.NoContent() : Results.NotFound();
+});
+
+adminGroup.MapDelete("/pasajes/{id}", async (Guid id, ISender sender) =>
+{
+    var success = await sender.Send(new DeletePasajeCommand(id));
+    return success ? Results.NoContent() : Results.NotFound();
 });
 
 app.Run();

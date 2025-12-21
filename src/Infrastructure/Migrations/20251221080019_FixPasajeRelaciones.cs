@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class FixPasajeRelaciones : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -53,7 +53,9 @@ namespace Infrastructure.Migrations
                     NombrePasajero = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     Costo = table.Column<decimal>(type: "numeric(10,2)", precision: 10, scale: 2, nullable: false),
                     QRData = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    CreatedAt = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    UsuarioCompradorId1 = table.Column<Guid>(type: "uuid", nullable: true),
+                    ViajeId1 = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -65,11 +67,21 @@ namespace Infrastructure.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
+                        name: "FK_Pasajes_Usuarios_UsuarioCompradorId1",
+                        column: x => x.UsuarioCompradorId1,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id");
+                    table.ForeignKey(
                         name: "FK_Pasajes_Viajes_ViajeId",
                         column: x => x.ViajeId,
                         principalTable: "Viajes",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Pasajes_Viajes_ViajeId1",
+                        column: x => x.ViajeId1,
+                        principalTable: "Viajes",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateIndex(
@@ -78,9 +90,19 @@ namespace Infrastructure.Migrations
                 column: "UsuarioCompradorId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Pasajes_UsuarioCompradorId1",
+                table: "Pasajes",
+                column: "UsuarioCompradorId1");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Pasajes_ViajeId",
                 table: "Pasajes",
                 column: "ViajeId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Pasajes_ViajeId1",
+                table: "Pasajes",
+                column: "ViajeId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Usuarios_Email",

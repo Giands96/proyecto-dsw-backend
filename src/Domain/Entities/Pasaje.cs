@@ -8,5 +8,9 @@ public class Pasaje
     public string NombrePasajero { get; set; } = string.Empty;
     public decimal Costo { get; set; }
     public string QRData { get; set; } = string.Empty;
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+    public virtual Usuario? UsuarioComprador { get; set; }
+    public virtual Viaje? Viaje { get; set; }
 }
+

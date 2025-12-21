@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251220201259_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251221080019_FixPasajeRelaciones")]
+    partial class FixPasajeRelaciones
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -35,7 +35,7 @@ namespace Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NombrePasajero")
@@ -50,14 +50,24 @@ namespace Infrastructure.Migrations
                     b.Property<Guid>("UsuarioCompradorId")
                         .HasColumnType("uuid");
 
+                    b.Property<Guid?>("UsuarioCompradorId1")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid>("ViajeId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("ViajeId1")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("UsuarioCompradorId");
 
+                    b.HasIndex("UsuarioCompradorId1");
+
                     b.HasIndex("ViajeId");
+
+                    b.HasIndex("ViajeId1");
 
                     b.ToTable("Pasajes", (string)null);
                 });
@@ -135,11 +145,23 @@ namespace Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Domain.Entities.Usuario", "UsuarioComprador")
+                        .WithMany()
+                        .HasForeignKey("UsuarioCompradorId1");
+
                     b.HasOne("Domain.Entities.Viaje", null)
                         .WithMany()
                         .HasForeignKey("ViajeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("Domain.Entities.Viaje", "Viaje")
+                        .WithMany()
+                        .HasForeignKey("ViajeId1");
+
+                    b.Navigation("UsuarioComprador");
+
+                    b.Navigation("Viaje");
                 });
 #pragma warning restore 612, 618
         }

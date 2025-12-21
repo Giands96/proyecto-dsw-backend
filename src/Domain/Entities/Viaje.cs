@@ -9,5 +9,7 @@ public class Viaje
     public int CapacidadMax { get; set; } = 50;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public ICollection<Pasaje> Pasajes { get; set; } = new List<Pasaje>();
+
     public int AsientosDisponibles(int vendidos) => Math.Max(0, CapacidadMax - vendidos);
 }

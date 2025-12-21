@@ -18,16 +18,16 @@ public class PasajeConfiguration : IEntityTypeConfiguration<Pasaje>
         builder.Property(x => x.QRData).HasColumnType("text");
         builder.Property(x => x.CreatedAt).HasColumnType("timestamp with time zone");
 
-        builder.HasOne<Viaje>()
-            .WithMany()
-            .HasForeignKey(x => x.ViajeId)
+       builder.HasOne(p => p.Viaje)
+            .WithMany(v => v.Pasajes)
+            .HasForeignKey(p => p.ViajeId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne<Usuario>()
+        builder.HasOne(p => p.UsuarioComprador)
             .WithMany()
-            .HasForeignKey(x => x.UsuarioCompradorId)
-            .OnDelete(DeleteBehavior.Cascade);
-
+            .HasForeignKey(p => p.UsuarioCompradorId)
+            .OnDelete(DeleteBehavior.Restrict);
+            
         builder.HasIndex(x => x.ViajeId);
     }
 }

@@ -32,7 +32,7 @@ namespace Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("numeric(10,2)");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NombrePasajero")
@@ -126,17 +126,26 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Pasaje", b =>
                 {
-                    b.HasOne("Domain.Entities.Usuario", null)
+                    b.HasOne("Domain.Entities.Usuario", "UsuarioComprador")
                         .WithMany()
                         .HasForeignKey("UsuarioCompradorId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Domain.Entities.Viaje", null)
-                        .WithMany()
+                    b.HasOne("Domain.Entities.Viaje", "Viaje")
+                        .WithMany("Pasajes")
                         .HasForeignKey("ViajeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("UsuarioComprador");
+
+                    b.Navigation("Viaje");
+                });
+
+            modelBuilder.Entity("Domain.Entities.Viaje", b =>
+                {
+                    b.Navigation("Pasajes");
                 });
 #pragma warning restore 612, 618
         }
