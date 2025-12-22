@@ -22,7 +22,11 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        var corsOrigins = builder.Configuration
+            .GetSection("Cors:AllowedOrigins")
+            .Get<string[]>() ?? new[] { "http://localhost:3000" };
+
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
@@ -100,7 +104,21 @@ using (var scope = app.Services.CreateScope())
     { 
         var context = services.GetRequiredService<Infrastructure.Persistence.AppDbContext>();
         var hasher = services.GetRequiredService<Application.Common.Interfaces.IPasswordHasher>();
-        await Infrastructure.Persistence.DbInitializer.InitializeAsync(context, hasher);
+        // Retry DB connection on container startup while Postgres is initializing.
+        var maxAttempts = 5;
+        for (var attempt = 1; attempt <= maxAttempts; attempt++)
+        {
+            try
+            {
+                await context.Database.MigrateAsync();
+                await Infrastructure.Persistence.DbInitializer.InitializeAsync(context, hasher);
+                break;
+            }
+            catch when (attempt < maxAttempts)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(2));
+            }
+        }
     }
     catch (Exception ex)
     {

@@ -2,6 +2,7 @@ using Application.Common.Interfaces;
 using Application.Dtos;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System.Data; // Necesario para IsolationLevel
 
 namespace Application.Features.Pasajes.Commands;
@@ -15,12 +16,21 @@ public class ComprarPasajesCommandHandler : IRequestHandler<ComprarPasajesComman
     private readonly IAppDbContext _context;
     private readonly IPaymentGateway _paymentGateway;
     private readonly IQRGenerator _qrGenerator;
+    private readonly string _validationBaseUrl;
 
-    public ComprarPasajesCommandHandler(IAppDbContext context, IPaymentGateway paymentGateway, IQRGenerator qrGenerator)
+    public ComprarPasajesCommandHandler(
+        IAppDbContext context,
+        IPaymentGateway paymentGateway,
+        IQRGenerator qrGenerator,
+        IConfiguration configuration)
     {
         _context = context;
         _paymentGateway = paymentGateway;
         _qrGenerator = qrGenerator;
+        var baseUrl = configuration["Qr:ValidationBaseUrl"];
+        _validationBaseUrl = string.IsNullOrWhiteSpace(baseUrl)
+            ? "https://bus-tickets-app.com/validate"
+            : baseUrl.TrimEnd('/');
     }
 
     public async Task<IReadOnlyList<PasajeCardDto>> Handle(ComprarPasajesCommand request, CancellationToken cancellationToken)
@@ -47,7 +57,7 @@ public class ComprarPasajesCommandHandler : IRequestHandler<ComprarPasajesComman
             foreach (var pasajero in request.Pasajeros)
             {
                 var pasajeId = Guid.NewGuid();
-                string validationUrl = $"https://bus-tickets-app.com/validate/{pasajeId}";
+                string validationUrl = $"{_validationBaseUrl}/{pasajeId}";
                 var qrData = _qrGenerator.GenerateQrBase64(validationUrl);
 
                 var pasaje = new Domain.Entities.Pasaje
