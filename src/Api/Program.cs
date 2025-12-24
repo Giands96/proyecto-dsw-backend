@@ -24,15 +24,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("FrontendPolicy", policy =>
     {
-        var corsOrigins = builder.Configuration
-            .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() 
-            ?? new[]
-            {
-                "https://proyecto-dsw-front.onrender.com"
-            };
-
-        policy.WithOrigins(corsOrigins)
+        policy.WithOrigins("https://proyecto-dsw-front.onrender.com")
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -156,7 +148,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseCors("FrontendPolicy");
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
