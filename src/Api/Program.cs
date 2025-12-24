@@ -28,8 +28,7 @@ builder.Services.AddCors(options =>
 
         policy.WithOrigins(corsOrigins!)
               .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowAnyHeader();
     });
 });
 
@@ -135,6 +134,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
+
+app.UseForwardedHeaders();
 app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
