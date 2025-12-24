@@ -22,13 +22,15 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("FrontendPolicy", policy =>
+    options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("https://proyecto-dsw-front.onrender.com")
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+        policy
+            .WithOrigins("https://proyecto-dsw-front.onrender.com")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
     });
 });
+
 
 
 builder.Services.AddApplication();
@@ -149,7 +151,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors();
-
 app.UseAuthentication();
 app.UseAuthorization();
 
