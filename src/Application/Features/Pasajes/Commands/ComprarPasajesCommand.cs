@@ -29,7 +29,7 @@ public class ComprarPasajesCommandHandler : IRequestHandler<ComprarPasajesComman
         _qrGenerator = qrGenerator;
         var baseUrl = configuration["Qr:ValidationBaseUrl"];
         _validationBaseUrl = string.IsNullOrWhiteSpace(baseUrl)
-            ? "https://bus-tickets-app.com/validate"
+            ? "https://proyecto-dsw-front.onrender.com/validate"
             : baseUrl.TrimEnd('/');
     }
 
