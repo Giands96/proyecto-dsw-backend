@@ -26,13 +26,18 @@ builder.Services.AddCors(options =>
     {
         var corsOrigins = builder.Configuration
             .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() ;
+            .Get<string[]>() 
+            ?? new[]
+            {
+                "https://proyecto-dsw-front.onrender.com"
+            };
 
-        policy.WithOrigins(corsOrigins!)
+        policy.WithOrigins(corsOrigins)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
 });
+
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -96,14 +101,21 @@ builder.Services.AddAuthorization(options =>
         policy.RequireRole("Admin"));
 });
 
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor |
+        ForwardedHeaders.XForwardedProto;
+
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+
 var app = builder.Build();
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders =
-        ForwardedHeaders.XForwardedProto |
-        ForwardedHeaders.XForwardedFor
-});
+app.UseForwardedHeaders();
+
 
 
 using (var scope = app.Services.CreateScope())
