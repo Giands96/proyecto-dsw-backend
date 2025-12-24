@@ -6,9 +6,17 @@ namespace Application.Features.Pasajes.Queries;
 
 public record ValidarPasajeQuery(string QrContent) : IRequest<ValidarPasajeResult>;
 
-public record ValidarPasajeResult(bool IsValid, Guid? PasajeId, Guid? ViajeId, string? NombrePasajero, string? Destino, DateTimeOffset? FechaHora);
+public record ValidarPasajeResult(
+    bool IsValid,
+    Guid? PasajeId,
+    Guid? ViajeId,
+    string? NombrePasajero,
+    string? Destino,
+    DateTimeOffset? FechaHora
+);
 
-public class ValidarPasajeQueryHandler : IRequestHandler<ValidarPasajeQuery, ValidarPasajeResult>
+public class ValidarPasajeQueryHandler
+    : IRequestHandler<ValidarPasajeQuery, ValidarPasajeResult>
 {
     private readonly IAppDbContext _context;
 
@@ -17,31 +25,39 @@ public class ValidarPasajeQueryHandler : IRequestHandler<ValidarPasajeQuery, Val
         _context = context;
     }
 
-    public async Task<ValidarPasajeResult> Handle(ValidarPasajeQuery request, CancellationToken cancellationToken)
+    public async Task<ValidarPasajeResult> Handle(
+        ValidarPasajeQuery request,
+        CancellationToken cancellationToken
+    )
     {
-        try
-        {
-            var pasajeIdRaw = ExtractPasajeId(request.QrContent);
-            if (string.IsNullOrWhiteSpace(pasajeIdRaw) || !Guid.TryParse(pasajeIdRaw, out var pasajeId))
-                throw new FormatException("El identificador del pasaje es inválido.");
+        var pasajeIdRaw = ExtractPasajeId(request.QrContent);
 
-            var pasaje = await _context.Pasajes.FirstOrDefaultAsync(p => p.Id == pasajeId, cancellationToken);
-            if (pasaje is null)
-                throw new KeyNotFoundException("El pasaje no existe en la base de datos.");
+        if (!Guid.TryParse(pasajeIdRaw, out var pasajeId))
+            return Invalid();
 
-            if (pasaje.Id != pasajeId)
-                throw new InvalidOperationException("El identificador del pasaje no coincide con el código escaneado.");
+        var pasaje = await _context.Pasajes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == pasajeId, cancellationToken);
 
-            var viaje = await _context.Viajes.FirstOrDefaultAsync(v => v.Id == pasaje.ViajeId, cancellationToken);
-            return new ValidarPasajeResult(true, pasaje.Id, pasaje.ViajeId, pasaje.NombrePasajero, viaje?.Destino, viaje?.FechaHora);
-        }
-        catch
-        {
-            return InvalidResult;
-        }
+        if (pasaje is null)
+            return Invalid();
+
+        var viaje = await _context.Viajes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(v => v.Id == pasaje.ViajeId, cancellationToken);
+
+        return new ValidarPasajeResult(
+            IsValid: true,
+            PasajeId: pasaje.Id,
+            ViajeId: pasaje.ViajeId,
+            NombrePasajero: pasaje.NombrePasajero,
+            Destino: viaje?.Destino,
+            FechaHora: viaje?.FechaHora
+        );
     }
 
-    private static ValidarPasajeResult InvalidResult => new(false, null, null, null, null, null);
+    private static ValidarPasajeResult Invalid() =>
+        new(false, null, null, null, null, null);
 
     private static string? ExtractPasajeId(string? qrContent)
     {
@@ -53,18 +69,15 @@ public class ValidarPasajeQueryHandler : IRequestHandler<ValidarPasajeQuery, Val
 
         if (Uri.TryCreate(qrContent, UriKind.Absolute, out var uri))
         {
-            var trimmedPath = uri.AbsolutePath.Trim('/');
-            if (!string.IsNullOrWhiteSpace(trimmedPath))
-            {
-                var lastSlash = trimmedPath.LastIndexOf('/');
-                return lastSlash >= 0 ? trimmedPath[(lastSlash + 1)..] : trimmedPath;
-            }
+            var segments = uri.AbsolutePath
+                .Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+            return segments.LastOrDefault();
         }
 
-        var fallbackSlash = qrContent.LastIndexOf('/');
-        if (fallbackSlash >= 0 && fallbackSlash + 1 < qrContent.Length)
-            return qrContent[(fallbackSlash + 1)..];
-
-        return null;
+        var lastSlash = qrContent.LastIndexOf('/');
+        return lastSlash >= 0
+            ? qrContent[(lastSlash + 1)..]
+            : qrContent;
     }
 }
