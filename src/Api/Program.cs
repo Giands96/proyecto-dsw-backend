@@ -24,9 +24,9 @@ builder.Services.AddCors(options =>
     {
         var corsOrigins = builder.Configuration
             .GetSection("Cors:AllowedOrigins")
-            .Get<string[]>() ?? new[] { "http://localhost:3000" };
+            .Get<string[]>() ;
 
-        policy.WithOrigins(corsOrigins)
+        policy.WithOrigins(corsOrigins!)
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
