@@ -213,12 +213,6 @@ app.MapGet("/api/pasajes/mis", async (int? page, int? pageSize, ClaimsPrincipal 
 }).RequireAuthorization();
 
 
-app.MapGet("/api/pasajes/validar/{id}", async (string id, ISender sender) =>
-{
-    Console.WriteLine($"ID RAW RECIBIDO: {id}");
-    var result = await sender.Send(new ValidarPasajeQuery(id));
-    return Results.Ok(result);
-});
 
 app.MapGet("/api/pasajes/validar/{id:guid}", async (Guid id, ISender sender) =>
 {
