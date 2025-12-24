@@ -54,6 +54,7 @@ public class ValidarPasajeQueryHandler
             Destino: viaje?.Destino,
             FechaHora: viaje?.FechaHora
         );
+
     }
 
     private static ValidarPasajeResult Invalid() =>
